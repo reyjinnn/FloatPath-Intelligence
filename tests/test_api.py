@@ -44,7 +44,7 @@ class ApiTests(unittest.TestCase):
 
     def make_app(self):
         return create_app(database_url=self.url, analyst_token="test-analyst-token",
-                          reviewer_token="test-reviewer-token")
+                          reviewer_token="test-reviewer-token", public_demo=True)
 
     def tearDown(self):
         self.context.__exit__(None, None, None)
@@ -240,7 +240,7 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(result.json()["result_hash"], first.json()["result_hash"])
             self.assertEqual(reopened.get(f"/api/v1/reports/{report.json()['id']}", headers=ANALYST).json()["markdown_content"], report.json()["markdown_content"])
             with other.state.db.connect() as connection:
-                self.assertEqual(connection.execute(text("SELECT version FROM schema_versions")).scalars().all(), [1])
+                self.assertEqual(connection.execute(text("SELECT version FROM schema_versions ORDER BY version")).scalars().all(), [1, 2, 3])
 
     def test_cors_and_problem_consistency(self):
         response = self.client.get("/health", headers={"Origin": "http://localhost:3000"})

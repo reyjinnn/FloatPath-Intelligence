@@ -22,8 +22,37 @@ export interface Holder {
   restricted?: Flag;
 }
 
+export type UserRole = 'viewer' | 'analyst' | 'reviewer' | 'admin';
+
+export interface Session {
+  user: { id: string; username: string; role: UserRole };
+  workspace: { name: string; data_mode: 'SYNTHETIC' };
+}
+
+export interface WorkspaceUser {
+  id: string;
+  username: string;
+  role: UserRole;
+  created_at: string;
+}
+
+export interface AuditEventRecord {
+  id: string;
+  workspace_id: string;
+  actor_id: string;
+  action: string;
+  entity_id: string;
+  before_hash: string | null;
+  after_hash: string | null;
+  correlation_id: string;
+  created_at: string;
+  username?: string | null;
+  actor_role?: UserRole | null;
+}
+
 export interface Snapshot {
   id: string;
+  board?: string;
   as_of_date: string;
   total_shares: number;
   sid_count: number | null;
@@ -53,6 +82,10 @@ export interface Company {
   legal_name: string;
   board: string;
   demo: boolean;
+  presentation_code?: string;
+  data_mode?: 'SYNTHETIC';
+  snapshot_state?: 'DRAFT' | 'LOCKED';
+  snapshot_status?: 'DRAFT' | 'LOCKED';
   snapshot: Snapshot;
   assessment?: Assessment;
 }
@@ -88,7 +121,33 @@ export interface DilutionItem {
   percentage_point_change: string;
 }
 
+export interface SnapshotRecord {
+  id: string;
+  company_id: string;
+  status: 'DRAFT' | 'LOCKED';
+  data_hash?: string | null;
+  created_at?: string;
+  locked_at?: string | null;
+  snapshot: Snapshot;
+  mode?: string;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  assessment_status?: AssessmentStatus;
+}
+
+export interface Comparison {
+  snapshot_id: string;
+  scenarios: SimulationResult[];
+  watermark: 'SIMULATION_ONLY';
+}
+
 export interface SimulationResult {
+  id?: string;
+  snapshot_id: string;
+  created_at?: string;
   scenario_id: string;
   result_hash: string;
   input_hash: string;
@@ -106,6 +165,9 @@ export interface ReportResult {
   markdown_content: string;
   watermark: 'SIMULATION_ONLY';
   sources: string[];
+  created_at?: string;
+  snapshot_id?: string;
+  scenario_ids?: string[];
 }
 
 export interface ApiErrorPayload {

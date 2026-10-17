@@ -30,7 +30,7 @@ def parse_csv(content: str, snapshot: dict) -> list[dict]:
     try:
         columns = reader.fieldnames or []
         if (len(columns) != len(set(columns)) or not set(COLUMNS) <= set(columns)
-                or set(columns) - set(COLUMNS) - {"as_of_date", "snapshot_id"}):
+                or set(columns) - set(COLUMNS) - {"as_of_date", "source_as_of_date", "snapshot_id"}):
             reject("CSV_MISSING_COLUMN", "Use the canonical holdings header")
         holders, refs = [], set()
         for number, row in enumerate(reader, 1):
@@ -42,6 +42,8 @@ def parse_csv(content: str, snapshot: dict) -> list[dict]:
                 reject("CSV_UNTRUSTED_FORMULA", "Formula-like CSV cells are not accepted")
             if "as_of_date" in row and row["as_of_date"] != snapshot["as_of_date"]:
                 reject("CSV_DATE_MISMATCH", "CSV date must match its snapshot")
+            if "source_as_of_date" in row and row["source_as_of_date"] != snapshot["as_of_date"]:
+                reject("CSV_DATE_MISMATCH", "Holder source date differs from the snapshot date; reconcile sources first.")
             if "snapshot_id" in row and row["snapshot_id"] != snapshot["id"]:
                 reject("CSV_SNAPSHOT_MISMATCH", "CSV snapshot ID must match its owner")
             if not re.fullmatch(r"[0-9]+", row["share_count"]) or len(row["share_count"]) > 16:
@@ -53,6 +55,8 @@ def parse_csv(content: str, snapshot: dict) -> list[dict]:
                 reject("CSV_DUPLICATE_HOLDER", "holder_ref must be unique")
             refs.add(row["holder_ref"])
             values = {key: row[key] for key in COLUMNS if key not in {"share_count", "eligibility_state"}}
+            if "source_as_of_date" in row:
+                values["source_as_of_date"] = row["source_as_of_date"]
             try:
                 holder = Holding(**values, shares=shares, eligibility=row["eligibility_state"])
             except ValidationError:

@@ -1,2 +1,2 @@
-import Workspace from "../../src/workspace";
-export default function DemoPage() { return <Workspace screen="demo" />; }
+import { redirect } from "next/navigation";
+export default function LegacyDemoPage() { redirect("/workspace"); }

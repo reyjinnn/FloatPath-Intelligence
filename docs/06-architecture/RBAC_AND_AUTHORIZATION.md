@@ -5,19 +5,21 @@
 - `PRIVATE_PILOT`: authenticated issuer/BAE workspace, explicit data processing agreement and authorized tenant setup before real uploads.
 
 ## Roles
-`DEMO_VIEWER`, `ANALYST`, `REVIEWER`, `TENANT_ADMIN`, `PLATFORM_ADMIN` (internal only).
+Workspace role names implemented in database constraints and session verification:
+- `viewer`: Auditor / External observer (read-only across workspace, inspect audit trail, no mutations)
+- `analyst`: Financial / Data analyst (draft revisions, CSV import, create and compare scenarios; forbidden from locking official snapshots or viewing audit trail)
+- `reviewer`: Compliance / Quality reviewer (authorized to review, validate, and lock immutable SHA-256 snapshots, full simulation and report creation, inspect audit trail)
+- `admin`: Workspace administrator (all reviewer privileges plus workspace user provisioning and role assignment, inspect audit trail)
 
-| Capability | Demo viewer | Analyst | Reviewer | Tenant admin | Platform admin |
-|---|---|---|---|---|---|
-| View synthetic demos | Read | Read | Read | Read | Read |
-| View own tenant snapshot | No | Read | Read | Read | Support only by explicit audited access |
-| Draft/import own tenant | No | Write | Write | Write | No by default |
-| Lock reviewed snapshot | No | No | Approve | Approve | No by default |
-| Simulate own tenant | Synthetic only | Yes | Yes | Yes | No by default |
-| Generate draft memo | Synthetic only | Yes | Yes | Yes | No by default |
-| Finalize decision memo | No | No | Yes | Yes | No by default |
-| Manage tenant user | No | No | No | Yes | Platform provisioning only |
-| Access another tenant | No | No | No | No | No by default |
+| Capability | Viewer (`viewer`) | Analyst (`analyst`) | Reviewer (`reviewer`) | Workspace Admin (`admin`) |
+|---|---|---|---|---|
+| View companies & holdings | Read | Read | Read | Read |
+| Edit draft holdings / CSV import | ❌ Ditolak (403) | ✅ Diizinkan | ✅ Diizinkan | ✅ Diizinkan |
+| Lock immutable snapshot | ❌ Ditolak (403) | ❌ Ditolak (403) | ✅ Diizinkan (SHA-256) | ✅ Diizinkan (SHA-256) |
+| Create & run scenarios | ❌ Ditolak (403) | ✅ Diizinkan | ✅ Diizinkan | ✅ Diizinkan |
+| Compare scenarios & view reports | Read | Read / Generate | Read / Generate | Read / Generate |
+| View Audit Trail (`/audit`) | ✅ Diizinkan | ❌ Ditolak (403) | ✅ Diizinkan | ✅ Diizinkan |
+| Manage Users & Roles (`/team`) | ❌ Ditolak (403) | ❌ Ditolak (403) | ❌ Ditolak (403) | ✅ Diizinkan |
 
 ## Authentication controls for pilot
 - OIDC compatible provider or secure session implementation; MFA for privileged roles.
