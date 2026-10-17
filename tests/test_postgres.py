@@ -17,11 +17,28 @@ class PostgresTests(unittest.TestCase):
         run_migrations(database)
         run_migrations(database)
         company_id, snapshot_id, audit_id = (str(uuid4()) for _ in range(3))
+
+        def cleanup_test_records():
+            try:
+                with database.connect() as conn:
+                    conn.execute(text("ALTER TABLE snapshots DISABLE TRIGGER snapshots_immutable;"))
+                    conn.execute(text("ALTER TABLE audit_events DISABLE TRIGGER audit_immutable;"))
+                    conn.execute(text("DELETE FROM audit_events WHERE id=:id;"), {"id": audit_id})
+                    conn.execute(text("DELETE FROM snapshots WHERE id=:id;"), {"id": snapshot_id})
+                    conn.execute(text("DELETE FROM companies WHERE id=:id;"), {"id": company_id})
+                    conn.execute(text("ALTER TABLE audit_events ENABLE TRIGGER audit_immutable;"))
+                    conn.execute(text("ALTER TABLE snapshots ENABLE TRIGGER snapshots_immutable;"))
+                    conn.commit()
+            except Exception:
+                pass
+
+        self.addCleanup(cleanup_test_records)
+
         with write_transaction(database) as connection:
             versions = connection.execute(text("SELECT version FROM schema_versions ORDER BY version")).scalars().all()
             self.assertEqual(versions, list(range(1, max(versions) + 1)))
             connection.execute(text(
-                "INSERT INTO companies VALUES (:id, 'synthetic', 'DEMO-001', 'DEMO POSTGRES CHECK', 'DEMO_STANDARD', '2026-10-17')"
+                "INSERT INTO companies VALUES (:id, 'synthetic', 'TEST-PG-001', 'DEMO POSTGRES CHECK', 'DEMO_STANDARD', '2026-10-17')"
             ), {"id": company_id})
             connection.execute(text(
                 "INSERT INTO snapshots (id,company_id,workspace_id,total_shares,payload,status,created_at) "

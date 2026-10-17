@@ -218,8 +218,6 @@ def get_company_with_latest_snapshot(connection, comp_row):
             snap_obj = validated_snapshot(snap_dict)
             assessment = calculate(engine.assess_numeric_target, snap_obj)
         except ApiProblem as error:
-            if snap_row["status"] != "DRAFT":
-                raise
             validation_errors = [{"code": error.code, "detail": error.problem_detail}]
     return enrich_company_presentation({
         "id": comp_row["id"],
