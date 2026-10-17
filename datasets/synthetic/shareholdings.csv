@@ -1,0 +1,4 @@
+holder_ref,holder_type,share_count,controller,controller_affiliate,director_commissioner,treasury,restricted,eligibility_state,evidence_ref
+CTRL-1,ORGANIZATION,850000000,TRUE,FALSE,FALSE,FALSE,FALSE,INELIGIBLE,fixture://demo-001/controller
+ELIGIBLE-BUCKET,AGGREGATE,100000000,FALSE,FALSE,FALSE,FALSE,FALSE,ELIGIBLE,fixture://demo-001/eligible-bucket
+TRANSFER-SELLER,ORGANIZATION,50000000,FALSE,FALSE,FALSE,FALSE,TRUE,INELIGIBLE,fixture://demo-001/transfer-seller

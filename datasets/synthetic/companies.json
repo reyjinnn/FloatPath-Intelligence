@@ -1,0 +1,173 @@
+[
+  {
+    "id": "00000000-0000-5000-8000-000000000001",
+    "code": "DEMO-001",
+    "legal_name": "DEMO Synthetic Float Target Company",
+    "board": "DEMO_STANDARD",
+    "demo": true,
+    "snapshot": {
+      "id": "10000000-0000-5000-8000-000000000001",
+      "as_of_date": "2026-10-17",
+      "total_shares": 1000000000,
+      "board": "DEMO_STANDARD",
+      "sid_count": 350,
+      "holders": [
+        {
+          "holder_ref": "CTRL-1",
+          "shares": 850000000,
+          "eligibility": "INELIGIBLE",
+          "holder_type": "ORGANIZATION",
+          "evidence_ref": "fixture://demo-001/controller",
+          "controller": "TRUE"
+        },
+        {
+          "holder_ref": "ELIGIBLE-BUCKET",
+          "shares": 100000000,
+          "eligibility": "ELIGIBLE",
+          "holder_type": "AGGREGATE",
+          "evidence_ref": "fixture://demo-001/eligible-bucket"
+        },
+        {
+          "holder_ref": "TRANSFER-SELLER",
+          "shares": 50000000,
+          "eligibility": "INELIGIBLE",
+          "holder_type": "ORGANIZATION",
+          "evidence_ref": "fixture://demo-001/transfer-seller",
+          "restricted": "TRUE"
+        }
+      ]
+    }
+  },
+  {
+    "id": "00000000-0000-5000-8000-000000000002",
+    "code": "DEMO-002",
+    "legal_name": "DEMO Synthetic Above Target Company",
+    "board": "DEMO_STANDARD",
+    "demo": true,
+    "snapshot": {
+      "id": "10000000-0000-5000-8000-000000000002",
+      "as_of_date": "2026-10-17",
+      "total_shares": 1000000000,
+      "board": "DEMO_STANDARD",
+      "sid_count": 420,
+      "holders": [
+        {
+          "holder_ref": "DEMO-002-CTRL",
+          "shares": 830000000,
+          "eligibility": "INELIGIBLE",
+          "holder_type": "ORGANIZATION",
+          "evidence_ref": "fixture://demo-002/controller",
+          "controller": "TRUE"
+        },
+        {
+          "holder_ref": "DEMO-002-ELIGIBLE-BUCKET",
+          "shares": 170000000,
+          "eligibility": "ELIGIBLE",
+          "holder_type": "AGGREGATE",
+          "evidence_ref": "fixture://demo-002/eligible-bucket"
+        }
+      ]
+    }
+  },
+  {
+    "id": "00000000-0000-5000-8000-000000000003",
+    "code": "DEMO-003",
+    "legal_name": "DEMO Synthetic Affiliation Review Company",
+    "board": "DEMO_STANDARD",
+    "demo": true,
+    "snapshot": {
+      "id": "10000000-0000-5000-8000-000000000003",
+      "as_of_date": "2026-10-17",
+      "total_shares": 1000000000,
+      "board": "DEMO_STANDARD",
+      "sid_count": 350,
+      "holders": [
+        {
+          "holder_ref": "DEMO-003-CTRL",
+          "shares": 860000000,
+          "eligibility": "INELIGIBLE",
+          "holder_type": "ORGANIZATION",
+          "evidence_ref": "fixture://demo-003/controller",
+          "controller": "TRUE"
+        },
+        {
+          "holder_ref": "DEMO-003-ELIGIBLE-BUCKET",
+          "shares": 120000000,
+          "eligibility": "ELIGIBLE",
+          "holder_type": "AGGREGATE",
+          "evidence_ref": "fixture://demo-003/eligible-bucket"
+        },
+        {
+          "holder_ref": "DEMO-003-REVIEW",
+          "shares": 20000000,
+          "eligibility": "UNKNOWN",
+          "holder_type": "ORGANIZATION",
+          "evidence_ref": "fixture://demo-003/affiliation-review",
+          "controller_affiliate": "UNKNOWN"
+        }
+      ]
+    }
+  },
+  {
+    "id": "00000000-0000-5000-8000-000000000004",
+    "code": "DEMO-004",
+    "legal_name": "DEMO Synthetic Issuance Company",
+    "board": "DEMO_STANDARD",
+    "demo": true,
+    "snapshot": {
+      "id": "10000000-0000-5000-8000-000000000004",
+      "as_of_date": "2026-10-17",
+      "total_shares": 1000000000,
+      "board": "DEMO_STANDARD",
+      "sid_count": 380,
+      "holders": [
+        {
+          "holder_ref": "DEMO-004-CTRL",
+          "shares": 860000000,
+          "eligibility": "INELIGIBLE",
+          "holder_type": "ORGANIZATION",
+          "evidence_ref": "fixture://demo-004/controller",
+          "controller": "TRUE"
+        },
+        {
+          "holder_ref": "DEMO-004-ELIGIBLE-BUCKET",
+          "shares": 140000000,
+          "eligibility": "ELIGIBLE",
+          "holder_type": "AGGREGATE",
+          "evidence_ref": "fixture://demo-004/eligible-bucket"
+        }
+      ]
+    }
+  },
+  {
+    "id": "00000000-0000-5000-8000-000000000005",
+    "code": "DEMO-005",
+    "legal_name": "DEMO Synthetic Missing SID Company",
+    "board": "DEMO_STANDARD",
+    "demo": true,
+    "snapshot": {
+      "id": "10000000-0000-5000-8000-000000000005",
+      "as_of_date": "2026-10-17",
+      "total_shares": 400000000,
+      "board": "DEMO_STANDARD",
+      "sid_count": null,
+      "holders": [
+        {
+          "holder_ref": "DEMO-005-CTRL",
+          "shares": 340000000,
+          "eligibility": "INELIGIBLE",
+          "holder_type": "ORGANIZATION",
+          "evidence_ref": "fixture://demo-005/controller",
+          "controller": "TRUE"
+        },
+        {
+          "holder_ref": "DEMO-005-ELIGIBLE-BUCKET",
+          "shares": 60000000,
+          "eligibility": "ELIGIBLE",
+          "holder_type": "AGGREGATE",
+          "evidence_ref": "fixture://demo-005/eligible-bucket"
+        }
+      ]
+    }
+  }
+]

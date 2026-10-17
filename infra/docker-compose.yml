@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: floatpath
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: floatpath
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U floatpath -d floatpath"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      FLOATPATH_ENV: production
+      DATABASE_URL: postgresql://floatpath:${POSTGRES_PASSWORD}@db:5432/floatpath
+      FLOATPATH_HOST: 0.0.0.0
+      FLOATPATH_PORT: 8000
+      FLOATPATH_ANALYST_TOKEN: ${FLOATPATH_ANALYST_TOKEN:-}
+      FLOATPATH_REVIEWER_TOKEN: ${FLOATPATH_REVIEWER_TOKEN:-}
+      FLOATPATH_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      INTERNAL_API_URL: http://api:8000
+      PORT: 3000
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

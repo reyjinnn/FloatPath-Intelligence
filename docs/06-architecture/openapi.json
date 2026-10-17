@@ -1,0 +1,1277 @@
+{
+  "components": {
+    "schemas": {
+      "Action": {
+        "additionalProperties": false,
+        "properties": {
+          "action_type": {
+            "enum": [
+              "TRANSFER",
+              "NEW_ISSUANCE"
+            ],
+            "title": "Action Type",
+            "type": "string"
+          },
+          "allocations": {
+            "items": {
+              "$ref": "#/components/schemas/Allocation"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Allocations",
+            "type": "array"
+          },
+          "price_idr_per_share": {
+            "anyOf": [
+              {
+                "maxLength": 27,
+                "pattern": "^(?:0|[1-9][0-9]{0,17})(?:\\.[0-9]{1,8})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Idr Per Share"
+          },
+          "seller_ref": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seller Ref"
+          }
+        },
+        "required": [
+          "action_type",
+          "allocations"
+        ],
+        "title": "Action",
+        "type": "object"
+      },
+      "Allocation": {
+        "additionalProperties": false,
+        "properties": {
+          "controller": {
+            "anyOf": [
+              {
+                "enum": [
+                  "TRUE",
+                  "FALSE",
+                  "UNKNOWN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Controller"
+          },
+          "controller_affiliate": {
+            "anyOf": [
+              {
+                "enum": [
+                  "TRUE",
+                  "FALSE",
+                  "UNKNOWN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Controller Affiliate"
+          },
+          "director_commissioner": {
+            "anyOf": [
+              {
+                "enum": [
+                  "TRUE",
+                  "FALSE",
+                  "UNKNOWN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Director Commissioner"
+          },
+          "eligibility": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ELIGIBLE",
+                  "INELIGIBLE",
+                  "UNKNOWN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eligibility"
+          },
+          "evidence_ref": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "pattern": "^fixture://[a-z0-9_/-]{1,180}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Ref"
+          },
+          "holder_ref": {
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "title": "Holder Ref",
+            "type": "string"
+          },
+          "holder_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "PERSON",
+                  "ORGANIZATION",
+                  "AGGREGATE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Type"
+          },
+          "restricted": {
+            "anyOf": [
+              {
+                "enum": [
+                  "TRUE",
+                  "FALSE",
+                  "UNKNOWN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restricted"
+          },
+          "shares": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 9007199254740991.0,
+            "title": "Shares",
+            "type": "integer"
+          },
+          "treasury": {
+            "anyOf": [
+              {
+                "enum": [
+                  "TRUE",
+                  "FALSE",
+                  "UNKNOWN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Treasury"
+          }
+        },
+        "required": [
+          "holder_ref",
+          "shares"
+        ],
+        "title": "Allocation",
+        "type": "object"
+      },
+      "CSVBody": {
+        "additionalProperties": false,
+        "properties": {
+          "csv_content": {
+            "maxLength": 5242880,
+            "title": "Csv Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "csv_content"
+        ],
+        "title": "CSVBody",
+        "type": "object"
+      },
+      "CompanyBody": {
+        "additionalProperties": false,
+        "properties": {
+          "board": {
+            "const": "DEMO_STANDARD",
+            "default": "DEMO_STANDARD",
+            "title": "Board",
+            "type": "string"
+          },
+          "code": {
+            "default": "DEMO-001",
+            "enum": [
+              "DEMO-001",
+              "DEMO-002",
+              "DEMO-003",
+              "DEMO-004",
+              "DEMO-005"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "demo": {
+            "const": true,
+            "default": true,
+            "title": "Demo",
+            "type": "boolean"
+          },
+          "legal_name": {
+            "maxLength": 64,
+            "pattern": "^DEMO[ A-Z0-9_-]{0,60}$",
+            "title": "Legal Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "legal_name"
+        ],
+        "title": "CompanyBody",
+        "type": "object"
+      },
+      "DemoReport": {
+        "additionalProperties": false,
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/Action"
+            },
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Actions",
+            "type": "array"
+          },
+          "company_id": {
+            "maxLength": 64,
+            "title": "Company Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "company_id",
+          "actions"
+        ],
+        "title": "DemoReport",
+        "type": "object"
+      },
+      "DemoSimulation": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "company_id": {
+            "maxLength": 64,
+            "title": "Company Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "company_id",
+          "action"
+        ],
+        "title": "DemoSimulation",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Holding": {
+        "additionalProperties": false,
+        "properties": {
+          "controller": {
+            "default": "FALSE",
+            "enum": [
+              "TRUE",
+              "FALSE",
+              "UNKNOWN"
+            ],
+            "title": "Controller",
+            "type": "string"
+          },
+          "controller_affiliate": {
+            "default": "FALSE",
+            "enum": [
+              "TRUE",
+              "FALSE",
+              "UNKNOWN"
+            ],
+            "title": "Controller Affiliate",
+            "type": "string"
+          },
+          "director_commissioner": {
+            "default": "FALSE",
+            "enum": [
+              "TRUE",
+              "FALSE",
+              "UNKNOWN"
+            ],
+            "title": "Director Commissioner",
+            "type": "string"
+          },
+          "eligibility": {
+            "default": "UNKNOWN",
+            "enum": [
+              "ELIGIBLE",
+              "INELIGIBLE",
+              "UNKNOWN"
+            ],
+            "title": "Eligibility",
+            "type": "string"
+          },
+          "evidence_ref": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "pattern": "^fixture://[a-z0-9_/-]{1,180}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Ref"
+          },
+          "holder_ref": {
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "title": "Holder Ref",
+            "type": "string"
+          },
+          "holder_type": {
+            "default": "ORGANIZATION",
+            "enum": [
+              "PERSON",
+              "ORGANIZATION",
+              "AGGREGATE"
+            ],
+            "title": "Holder Type",
+            "type": "string"
+          },
+          "restricted": {
+            "default": "FALSE",
+            "enum": [
+              "TRUE",
+              "FALSE",
+              "UNKNOWN"
+            ],
+            "title": "Restricted",
+            "type": "string"
+          },
+          "shares": {
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Shares",
+            "type": "integer"
+          },
+          "treasury": {
+            "default": "FALSE",
+            "enum": [
+              "TRUE",
+              "FALSE",
+              "UNKNOWN"
+            ],
+            "title": "Treasury",
+            "type": "string"
+          }
+        },
+        "required": [
+          "holder_ref",
+          "shares"
+        ],
+        "title": "Holding",
+        "type": "object"
+      },
+      "ScenarioIds": {
+        "additionalProperties": false,
+        "properties": {
+          "scenario_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Scenario Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "scenario_ids"
+        ],
+        "title": "ScenarioIds",
+        "type": "object"
+      },
+      "SnapshotBody": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of_date": {
+            "format": "date",
+            "title": "As Of Date",
+            "type": "string"
+          },
+          "board": {
+            "const": "DEMO_STANDARD",
+            "default": "DEMO_STANDARD",
+            "title": "Board",
+            "type": "string"
+          },
+          "holders": {
+            "items": {
+              "$ref": "#/components/schemas/Holding"
+            },
+            "maxItems": 10000,
+            "title": "Holders",
+            "type": "array"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "sid_count": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid Count"
+          },
+          "total_shares": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 9007199254740991.0,
+            "title": "Total Shares",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "as_of_date",
+          "total_shares"
+        ],
+        "title": "SnapshotBody",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "FloatPath synthetic API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/companies": {
+      "post": {
+        "operationId": "create_company_api_v1_companies_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Company"
+      }
+    },
+    "/api/v1/companies/{identifier}": {
+      "get": {
+        "operationId": "get_company_api_v1_companies__identifier__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Company"
+      }
+    },
+    "/api/v1/companies/{identifier}/snapshots": {
+      "post": {
+        "operationId": "create_snapshot_api_v1_companies__identifier__snapshots_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnapshotBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Snapshot"
+      }
+    },
+    "/api/v1/demo/companies": {
+      "get": {
+        "operationId": "demo_companies_api_v1_demo_companies_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Demo Companies"
+      }
+    },
+    "/api/v1/demo/companies/{identifier}": {
+      "get": {
+        "operationId": "demo_detail_api_v1_demo_companies__identifier__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Demo Detail"
+      }
+    },
+    "/api/v1/demo/reports": {
+      "post": {
+        "operationId": "demo_report_api_v1_demo_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoReport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Demo Report"
+      }
+    },
+    "/api/v1/demo/simulations": {
+      "post": {
+        "operationId": "demo_simulation_api_v1_demo_simulations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoSimulation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Demo Simulation"
+      }
+    },
+    "/api/v1/documents": {
+      "post": {
+        "operationId": "unavailable_api_v1_documents_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Unavailable"
+      }
+    },
+    "/api/v1/documents/{identifier}:extract": {
+      "post": {
+        "operationId": "unavailable_api_v1_documents__identifier__extract_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Unavailable"
+      }
+    },
+    "/api/v1/extractions/{identifier}:approve": {
+      "post": {
+        "operationId": "unavailable_api_v1_extractions__identifier__approve_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Unavailable"
+      }
+    },
+    "/api/v1/reports": {
+      "post": {
+        "operationId": "create_report_api_v1_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioIds"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Report"
+      }
+    },
+    "/api/v1/reports/{identifier}": {
+      "get": {
+        "operationId": "get_report_api_v1_reports__identifier__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Report"
+      }
+    },
+    "/api/v1/rulesets": {
+      "get": {
+        "operationId": "rulesets_api_v1_rulesets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Rulesets"
+      }
+    },
+    "/api/v1/scenario-comparisons": {
+      "post": {
+        "operationId": "compare_api_v1_scenario_comparisons_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioIds"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare"
+      }
+    },
+    "/api/v1/scenarios/{identifier}/result": {
+      "get": {
+        "operationId": "get_result_api_v1_scenarios__identifier__result_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Result"
+      }
+    },
+    "/api/v1/snapshots/{identifier}": {
+      "get": {
+        "operationId": "get_snapshot_api_v1_snapshots__identifier__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Snapshot"
+      }
+    },
+    "/api/v1/snapshots/{identifier}/assessments": {
+      "post": {
+        "operationId": "assess_api_v1_snapshots__identifier__assessments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assess"
+      }
+    },
+    "/api/v1/snapshots/{identifier}/holdings:import": {
+      "post": {
+        "operationId": "import_holdings_api_v1_snapshots__identifier__holdings_import_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CSVBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Holdings"
+      }
+    },
+    "/api/v1/snapshots/{identifier}/scenarios": {
+      "post": {
+        "operationId": "create_scenario_api_v1_snapshots__identifier__scenarios_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Action"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Scenario"
+      }
+    },
+    "/api/v1/snapshots/{identifier}:lock": {
+      "post": {
+        "operationId": "lock_api_v1_snapshots__identifier__lock_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lock"
+      }
+    },
+    "/api/v1/snapshots/{identifier}:validate": {
+      "post": {
+        "operationId": "validate_api_v1_snapshots__identifier__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate"
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    }
+  }
+}
