@@ -1,21 +1,21 @@
 # Risk Register & Assumption Ownership
 
-Status: pre-development / owner belum ditetapkan. Severity memakai *Likelihood (L) × Impact (I)* 1–5; skor bukan probabilitas nyata.
+Status: pre-development / owner not yet assigned. Severity uses *Likelihood (L) × Impact (I)* on a 1–5 scale; scores are not actual probabilities.
 
-| ID | Risiko | L | I | Mitigasi / trigger | Penanggung jawab usulan |
+| ID | Risk | L | I | Mitigation / trigger | Proposed owner |
 |---|---|---:|---:|---|---|
-| R-01 | Interpretasi regulasi salah | 4 | 5 | Legal gate, review pasal-ke-rule, jangan gunakan `COMPLIANT` | Domain reviewer + tech lead |
-| R-02 | Data ownership/afiliasi tidak lengkap | 5 | 5 | Eligibility 3-state, bounded/unknown output, manual verification | Data owner |
-| R-03 | Hak data BEI/KSEI dilanggar | 4 | 5 | Synthetic-first, license registry, non-scraping policy | Product/legal |
-| R-04 | Kalkulasi salah setelah reclassification | 4 | 5 | Full ledger recompute + golden/property tests | Engine owner |
-| R-05 | AI mengarang source/page/angka | 4 | 4 | Typed candidate, citation verifier, mandatory accept step | AI owner |
-| R-06 | Dokumen lintas tenant bocor | 3 | 5 | RLS/service authorizer, tenant-isolation tests, private bucket | Security owner |
-| R-07 | Produk tumpang tindih Datindo | 4 | 4 | Fit-gap, differentiator modular, issuer-direct fallback | Business owner |
-| R-08 | Tidak ada pembeli | 4 | 5 | Discovery, pilot intent, no 200–450m pricing promises | Founder |
+| R-01 | Incorrect regulatory interpretation | 4 | 5 | Legal gate, clause-to-rule review, do not use `COMPLIANT` | Domain reviewer + tech lead |
+| R-02 | Incomplete ownership/affiliation data | 5 | 5 | Eligibility 3-state, bounded/unknown output, manual verification | Data owner |
+| R-03 | BEI/KSEI data rights violated | 4 | 5 | Synthetic-first, license registry, non-scraping policy | Product/legal |
+| R-04 | Incorrect calculation after reclassification | 4 | 5 | Full ledger recompute + golden/property tests | Engine owner |
+| R-05 | AI fabricates sources/pages/numbers | 4 | 4 | Typed candidate, citation verifier, mandatory accept step | AI owner |
+| R-06 | Cross-tenant document leak | 3 | 5 | RLS/service authorizer, tenant-isolation tests, private bucket | Security owner |
+| R-07 | Product overlaps with Datindo | 4 | 4 | Fit-gap, modular differentiator, issuer-direct fallback | Business owner |
+| R-08 | No buyers | 4 | 5 | Discovery, pilot intent, no 200–450m pricing promises | Founder |
 | R-09 | Scope creep rights issue/approval | 5 | 3 | Scope lock & change request; MVP limited operations | Product owner |
-| R-10 | Sumber regulasi berubah | 4 | 4 | Versioned rules, change impact, freeze issued reports | Compliance owner |
-| R-11 | Input malicious PDF/CSV | 4 | 4 | File limits, AV/quarantine, schema guard, injection eval | Security owner |
-| R-12 | Cold email gagal dibalas | 4 | 3 | Parallel target issuers; measure qualified responses | Business owner |
+| R-10 | Regulatory sources change | 4 | 4 | Versioned rules, change impact, freeze issued reports | Compliance owner |
+| R-11 | Malicious PDF/CSV input | 4 | 4 | File limits, AV/quarantine, schema guard, injection eval | Security owner |
+| R-12 | Cold emails receive no replies | 4 | 3 | Parallel target issuers; measure qualified responses | Business owner |
 
 ## Risk review cadence
 - Week zero: log each R with actual owner, mitigation evidence, due date, status.

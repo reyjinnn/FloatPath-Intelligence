@@ -14,12 +14,18 @@ Workspace role names implemented in database constraints and session verificatio
 | Capability | Viewer (`viewer`) | Analyst (`analyst`) | Reviewer (`reviewer`) | Workspace Admin (`admin`) |
 |---|---|---|---|---|
 | View companies & holdings | Read | Read | Read | Read |
-| Edit draft holdings / CSV import | ❌ Ditolak (403) | ✅ Diizinkan | ✅ Diizinkan | ✅ Diizinkan |
-| Lock immutable snapshot | ❌ Ditolak (403) | ❌ Ditolak (403) | ✅ Diizinkan (SHA-256) | ✅ Diizinkan (SHA-256) |
-| Create & run scenarios | ❌ Ditolak (403) | ✅ Diizinkan | ✅ Diizinkan | ✅ Diizinkan |
+| Edit draft holdings / CSV import | ❌ Denied (403) | ✅ Allowed | ✅ Allowed | ✅ Allowed |
+| Lock immutable snapshot | ❌ Denied (403) | ❌ Denied (403) | ✅ Allowed (SHA-256 + If-Match) | ✅ Allowed (SHA-256 + If-Match) |
+| Create & run scenarios | ❌ Denied (403) | ✅ Allowed | ✅ Allowed | ✅ Allowed |
 | Compare scenarios & view reports | Read | Read / Generate | Read / Generate | Read / Generate |
-| View Audit Trail (`/audit`) | ✅ Diizinkan | ❌ Ditolak (403) | ✅ Diizinkan | ✅ Diizinkan |
-| Manage Users & Roles (`/team`) | ❌ Ditolak (403) | ❌ Ditolak (403) | ❌ Ditolak (403) | ✅ Diizinkan |
+| View Audit Trail (`/audit`) | ✅ Allowed | ❌ Denied (403) | ✅ Allowed | ✅ Allowed |
+| Manage Users & Roles (`/team`) | ❌ Denied (403) | ❌ Denied (403) | ❌ Denied (403) | ✅ Allowed |
+
+## Client Navigation & Operational Enforcements
+- Dynamic Sidebar & Route Guards (`apps/web/src/access.ts`): Navigation items are rendered only for authorized roles. Unknown roles and unregistered screens are denied by default. Direct URL navigation to forbidden routes displays an explicit "Access denied" panel without fetching protected entities.
+- Company Context (FR-013): Opening a company only enables links for that company; it never changes the server-supplied role. Viewer ledger navigation is labeled as read-only, and snapshot lock controls render only for Reviewer/Admin. Regression tests cover all four roles through company selection, company-menu navigation, reload, and forbidden direct routes.
+- Reviewer Lock Precondition Binding (FR-002/FR-012): Locking requires reviewer modal confirmation and passes the canonical `content_hash` via `If-Match`. Interleaved changes by other users result in `409 SNAPSHOT_CHANGED`, preventing unseen edits from being locked.
+- Interactive Feedback: Persistent, accessible HTML5 `<dialog>` modals for lock and navigation warnings, drawers for holder and audit inspection, and bounded toast notifications.
 
 ## Authentication controls for pilot
 - OIDC compatible provider or secure session implementation; MFA for privileged roles.

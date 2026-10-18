@@ -10,9 +10,11 @@ Base `/api/v1`; JSON UTF-8; camelCase for public fields or snake_case **choose o
 | POST | `/companies` | create issuer | analyst |
 | GET | `/companies/{id}` | detail | analyst |
 | POST | `/companies/{id}/snapshots` | draft snapshot | analyst |
+| GET | `/snapshots/{id}` | persisted snapshot and content hash | authorized |
+| PATCH | `/snapshots/{id}/holdings` | replace draft holdings | analyst |
 | POST | `/snapshots/{id}/holdings:import` | CSV/manual records | analyst |
-| POST | `/snapshots/{id}:validate` | sum & schema check | analyst |
-| POST | `/snapshots/{id}:lock` | reviewer approval | reviewer |
+| POST | `/snapshots/{id}:validate` | sum & schema check; optional `If-Match` | analyst/reviewer |
+| POST | `/snapshots/{id}:lock` | reviewer approval; optional `If-Match` | reviewer |
 | POST | `/snapshots/{id}/assessments` | selected rule assessment | analyst |
 | POST | `/snapshots/{id}/scenarios` | apply typed action | analyst |
 | GET | `/scenarios/{id}/result` | deterministic result | analyst |
@@ -23,6 +25,28 @@ Base `/api/v1`; JSON UTF-8; camelCase for public fields or snake_case **choose o
 | POST | `/reports` | memo generation | analyst |
 | GET | `/reports/{id}` | read/report download | authorized |
 | GET | `/rulesets` | scope and review status | analyst |
+
+## Snapshot review precondition (FR-002, FR-012)
+
+- Snapshot create, `GET /snapshots/{id}`, and holdings save (`PATCH /holdings` or `POST /holdings:review`) responses include top-level `content_hash` alongside `snapshot`. This is `sha256:` plus lowercase SHA-256 hex over the **entire persisted payload**, serialized with Python `json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)` and encoded as UTF-8. Object key order is canonical; holder array order, optional fields, and all saved values remain significant. No schema column is added.
+- Successful `POST /snapshots/{id}:validate` adds `validation_hash`, equal to the `content_hash` of the persisted payload that was validated. Existing `valid`, `errors`, and `assessment_status` fields remain. Validation is not a reservation; later writes remain possible.
+- Validate and lock accept optional `If-Match: sha256:<64 lowercase hex digits>` or the quoted strong entity-tag form `If-Match: "sha256:<64 lowercase hex digits>"`. Exactly one digest is accepted. Empty, malformed, weak, wildcard, repeated, or comma-separated values return `400 INVALID_IF_MATCH`; no fallback to unconditional behavior occurs for an invalid supplied header.
+- A well-formed digest that differs from the current persisted payload returns `409 SNAPSHOT_CHANGED`. Conditional validate checks the exact fetched payload before validation. Lock checks inside the write transaction (`BEGIN IMMEDIATE` on SQLite; PostgreSQL write advisory lock plus `SELECT ... FOR UPDATE` on the snapshot row), then revalidates that same payload and locks it atomically. Rejection changes no snapshot fields and appends no lock audit event. Already-locked snapshots still return `409 SNAPSHOT_LOCKED`.
+- **New reviewer UI clients must always send the latest inspected saved/GET `content_hash` on validate, then send its matching returned `validation_hash` on lock.** On `SNAPSHOT_CHANGED`, discard approval, reload the saved snapshot, and require review again. Do not retry without the header or automatically validate/lock unseen updated content.
+- Headerless validate/lock remain supported for legacy API clients. **Legacy lock only validates the current ledger; it does not bind approval to previously reviewed content and remains exposed to edits between inspection and lock.**
+- `content_hash`/`validation_hash` are payload-version digests, not engine `data_hash`. Existing lock `data_hash`, golden calculations, immutable history, and audit field meanings are unchanged. CORS permits `If-Match` for browser callers.
+
+Example review-bound requests (routes relative to `/api/v1`):
+
+```http
+GET /snapshots/{id}
+
+POST /snapshots/{id}:validate
+If-Match: "sha256:<content_hash hex from inspected response>"
+
+POST /snapshots/{id}:lock
+If-Match: "sha256:<validation_hash hex from successful conditional validate>"
+```
 
 ## Example request — new issuance
 ```json

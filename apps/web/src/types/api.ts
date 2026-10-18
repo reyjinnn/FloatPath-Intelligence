@@ -126,6 +126,7 @@ export interface SnapshotRecord {
   company_id: string;
   status: 'DRAFT' | 'LOCKED';
   data_hash?: string | null;
+  content_hash: string;
   created_at?: string;
   locked_at?: string | null;
   snapshot: Snapshot;
@@ -135,6 +136,7 @@ export interface SnapshotRecord {
 export interface ValidationResult {
   valid: boolean;
   errors: string[];
+  validation_hash: string;
   assessment_status?: AssessmentStatus;
 }
 

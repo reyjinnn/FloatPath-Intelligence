@@ -1,6 +1,6 @@
-# Indeks Lengkap Seluruh File Markdown — FloatPath v2
+# Complete Index of All Markdown Files — FloatPath v2
 
-Ini adalah daftar **semua** berkas `.md` yang benar-benar tersedia dalam folder ZIP, lengkap dengan link relatif yang dapat dibuka setelah folder diekstrak. Urutan belajar ada di [SCREENSHOT_FILE_MAP.md](SCREENSHOT_FILE_MAP.md). Tidak ada kode aplikasi runnable di paket dokumentasi ini.
+This lists **all** `.md` files actually available in the ZIP folder, with relative links that work after extraction. The reading order is in [SCREENSHOT_FILE_MAP.md](SCREENSHOT_FILE_MAP.md). This documentation package contains no runnable application code.
 
 
 ## Root & Quickstart
@@ -123,4 +123,4 @@ Ini adalah daftar **semua** berkas `.md` yang benar-benar tersedia dalam folder 
 - [templates/RULE_CHANGE_TEMPLATE.md](templates/RULE_CHANGE_TEMPLATE.md)
 - [templates/TEST_EXECUTION_REPORT_TEMPLATE.md](templates/TEST_EXECUTION_REPORT_TEMPLATE.md)
 
-**Total: 75 file `.md`.**
+**Total: 75 `.md` files.**

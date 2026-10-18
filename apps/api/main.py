@@ -5,7 +5,6 @@ import json
 import logging
 import os
 from pathlib import Path
-import re
 from types import SimpleNamespace
 from urllib.parse import urlsplit
 from uuid import UUID, uuid4
@@ -33,6 +32,7 @@ from apps.api.db import get_engine, run_migrations, write_transaction
 from apps.api.engine_bridge import calculate, engine
 from apps.api.errors import ApiProblem, problem_response
 from apps.api.idempotency import digest, dump, remember, replay
+from apps.api.identifiers import SYNTHETIC_WORKSPACE_ENTITY_ID, stable_id
 from apps.api.presentation import enrich_company_presentation
 from apps.api.reports import render_report
 from apps.api.schemas import (
@@ -139,7 +139,7 @@ def audit(connection, request, actor, action, entity_id, before=None, after=None
     connection.execute(text(
         "INSERT INTO audit_events (id, workspace_id, actor_id, action, entity_id, before_hash, after_hash, correlation_id, created_at) "
         "VALUES (:id, 'synthetic', :actor, :action, :entity, :before, :after, :correlation, :created)"
-    ), {"id": str(uuid4()), "actor": getattr(request.state, "user", {}).get("id", actor), "action": action, "entity": entity_id,
+    ), {"id": str(uuid4()), "actor": request.state.user["id"], "action": action, "entity": entity_id,
         "before": before, "after": after, "correlation": request.state.correlation_id, "created": now()})
 
 
@@ -170,10 +170,29 @@ def resolve_company(connection, identifier):
     return dict(row)
 
 
-def snapshot_row(connection, identifier):
+def expected_content_hash(request: Request) -> str | None:
+    # Multiple If-Match headers or multiple entity-tags cannot bind a single review.
+    headers = request.headers.getlist("if-match")
+    if not headers:
+        return None
+    if len(headers) != 1:
+        fail(400, "INVALID_IF_MATCH", "A single exact entity-tag is required")
+    raw = headers[0].strip()
+    if not raw or raw == "*" or "," in raw or raw.startswith(('W/"', 'w/"')):
+        fail(400, "INVALID_IF_MATCH", "If-Match must specify a single strong entity-tag")
+    if raw.startswith('"') and raw.endswith('"') and len(raw) >= 2:
+        raw = raw[1:-1]
+    if (not raw.startswith("sha256:") or len(raw) != 71
+            or any(c not in "0123456789abcdef" for c in raw[7:])):
+        fail(400, "INVALID_IF_MATCH", "If-Match must specify a single canonical sha256 digest")
+    return raw
+
+
+def snapshot_row(connection, identifier, for_update=False):
+    row_lock = " FOR UPDATE OF s" if for_update and connection.dialect.name == "postgresql" else ""
     row = connection.execute(text(
         "SELECT s.*, c.code FROM snapshots s JOIN companies c ON s.company_id=c.id "
-        "WHERE s.id=:id AND s.workspace_id='synthetic' AND c.workspace_id='synthetic'"
+        "WHERE s.id=:id AND s.workspace_id='synthetic' AND c.workspace_id='synthetic'" + row_lock
     ), {"id": identifier}).mappings().first()
     if not row:
         fail(404, "NOT_FOUND", "Snapshot not found in synthetic workspace")
@@ -181,8 +200,9 @@ def snapshot_row(connection, identifier):
 
 
 def snapshot_response(row):
+    payload = json.loads(row["payload"])
     return {key: row[key] for key in ("id", "company_id", "status", "data_hash", "created_at", "locked_at")} | {
-        "snapshot": json.loads(row["payload"]), "mode": "SYNTHETIC_ONLY"}
+        "snapshot": payload, "content_hash": digest(payload), "mode": "SYNTHETIC_ONLY"}
 
 
 def scenario_row(connection, identifier):
@@ -293,14 +313,17 @@ def create_app(database_url=None, analyst_token=None, reviewer_token=None, allow
         allow_origins=allowed,
         allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
         allow_credentials=True,
-        allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Correlation-ID", "Origin"],
+        allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "If-Match", "X-Correlation-ID", "Origin"],
         expose_headers=["X-Correlation-ID"],
     )
 
     @application.middleware("http")
     async def correlation(request: Request, call_next):
         supplied = request.headers.get("x-correlation-id", "")
-        request.state.correlation_id = supplied if re.fullmatch(r"[A-Za-z0-9_-]{1,64}", supplied) else "req_" + uuid4().hex
+        try:
+            request.state.correlation_id = str(UUID(supplied))
+        except ValueError:
+            request.state.correlation_id = str(uuid4())
 
         # Check disabled public demo routes early
         if request.url.path.startswith("/api/v1/demo/") and not application.state.config.public_demo:
@@ -368,8 +391,8 @@ def create_app(database_url=None, analyst_token=None, reviewer_token=None, allow
             actor = get_current_role(request)
             if actor not in allowed:
                 with write_transaction(database) as connection:
-                    audit(connection, request, actor, "AUTH_DENIED", "workspace")
-                fail(403, "FORBIDDEN", f"Otorisasi ditolak: Memerlukan salah satu peran {', '.join(allowed)}")
+                    audit(connection, request, actor, "AUTH_DENIED", SYNTHETIC_WORKSPACE_ENTITY_ID)
+                fail(403, "FORBIDDEN", f"Access denied: requires one of these roles: {', '.join(allowed)}")
             return actor
         return dependency
 
@@ -439,7 +462,7 @@ def create_app(database_url=None, analyst_token=None, reviewer_token=None, allow
     def demo_simulation(body: DemoSimulation):
         company = demo_company(body.company_id)
         result = calculate(engine.simulate, validated_snapshot(company["snapshot"]), action_dict(body.action, company["code"]))
-        return result | {"scenario_id": result["result_hash"], "company_id": company["id"]}
+        return result | {"scenario_id": stable_id("demo-scenario:" + result["result_hash"]), "company_id": company["id"]}
 
     @application.post("/api/v1/demo/reports")
     def demo_report(body: DemoReport):
@@ -448,7 +471,7 @@ def create_app(database_url=None, analyst_token=None, reviewer_token=None, allow
         results = [calculate(engine.simulate, snapshot, action_dict(action, company["code"])) for action in body.actions]
         sources = sorted({h["evidence_ref"] for h in company["snapshot"]["holders"] if h.get("evidence_ref")})
         report = render_report(company["legal_name"], calculate(engine.assess_numeric_target, snapshot), results, sources)
-        return report | {"id": digest(report), "company_id": company["id"]}
+        return report | {"id": stable_id("demo-report:" + digest(report)), "company_id": company["id"]}
 
     @application.get("/api/v1/rulesets")
     def rulesets():
@@ -608,22 +631,30 @@ def create_app(database_url=None, analyst_token=None, reviewer_token=None, allow
             return response
 
     @application.post("/api/v1/snapshots/{identifier}:validate")
-    def validate(identifier: UUID, actor=Depends(role_analyst_plus)):
+    def validate(identifier: UUID, request: Request, actor=Depends(role_analyst_plus)):
+        expected_hash = expected_content_hash(request)
         with database.connect() as connection:
             row = snapshot_row(connection, str(identifier))
         payload = json.loads(row["payload"])
+        validation_hash = digest(payload)
+        if expected_hash is not None and expected_hash != validation_hash:
+            fail(409, "SNAPSHOT_CHANGED", "Snapshot content changed; reload and review before validating")
         snapshot = validated_snapshot(payload)
         check_sources(payload["holders"], row["code"], require=True)
         assessment = calculate(engine.assess_numeric_target, snapshot)
-        return {"valid": True, "errors": [], "assessment_status": assessment["assessment_status"]}
+        return {"valid": True, "errors": [], "assessment_status": assessment["assessment_status"],
+                "validation_hash": validation_hash}
 
     @application.post("/api/v1/snapshots/{identifier}:lock")
     def lock(identifier: UUID, request: Request, actor=Depends(reviewer_role)):
+        expected_hash = expected_content_hash(request)
         with write_transaction(database) as connection:
-            row = snapshot_row(connection, str(identifier))
+            row = snapshot_row(connection, str(identifier), for_update=True)
             if row["status"] != "DRAFT":
                 fail(409, "SNAPSHOT_LOCKED", "Snapshot is already locked")
             payload = json.loads(row["payload"])
+            if expected_hash is not None and expected_hash != digest(payload):
+                fail(409, "SNAPSHOT_CHANGED", "Snapshot content changed; reload and review before locking")
             snapshot = validated_snapshot(payload)
             check_sources(payload["holders"], row["code"], require=True)
             assessment = calculate(engine.assess_numeric_target, snapshot)
@@ -769,7 +800,7 @@ def create_app(database_url=None, analyst_token=None, reviewer_token=None, allow
                 "SELECT id FROM workspace_users WHERE username=:username AND workspace_id='synthetic'"
             ), {"username": body.username}).first()
             if existing:
-                fail(409, "USER_EXISTS", f"Pengguna '{body.username}' sudah terdaftar")
+                fail(409, "USER_EXISTS", f"User '{body.username}' already exists")
         created = create_user(database, body.username, body.password, body.role)
         with write_transaction(database) as connection:
             audit(connection, request, actor, "CREATE_USER", created["id"], after=created["role"])
@@ -783,13 +814,13 @@ def create_app(database_url=None, analyst_token=None, reviewer_token=None, allow
                 "SELECT id, username, role FROM workspace_users WHERE id=:id AND workspace_id='synthetic'"
             ), {"id": uid}).mappings().first()
             if not user:
-                fail(404, "NOT_FOUND", "Pengguna tidak ditemukan")
+                fail(404, "NOT_FOUND", "User not found")
             if user["role"] == "admin" and body.role != "admin":
                 admin_count = connection.execute(text(
                     "SELECT count(*) FROM workspace_users WHERE role='admin' AND workspace_id='synthetic'"
                 )).scalar()
                 if admin_count <= 1:
-                    fail(400, "CANNOT_DEMOTE_LAST_ADMIN", "Tidak dapat mengubah peran admin terakhir")
+                    fail(400, "CANNOT_DEMOTE_LAST_ADMIN", "Cannot demote the last administrator")
             connection.execute(text("UPDATE workspace_users SET role=:role WHERE id=:id"), {"role": body.role, "id": uid})
             audit(connection, request, actor, "UPDATE_USER_ROLE", uid, before=user["role"], after=body.role)
             return {"id": uid, "username": user["username"], "role": body.role}

@@ -6,7 +6,7 @@ import getpass
 import os
 from pathlib import Path
 import sys
-from uuid import NAMESPACE_URL, uuid5
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -15,21 +15,73 @@ if str(ROOT) not in sys.path:
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
-from apps.api.auth import create_user
+from apps.api.auth import create_user, hash_password
 from apps.api.db import get_engine, run_migrations, write_transaction
 from apps.api.engine_bridge import calculate, engine
 from apps.api.idempotency import digest, dump
+from apps.api.identifiers import stable_id
 from apps.api.main import catalog
 from apps.api.presentation import PRESENTATION_MAP
 from apps.api.reports import render_report
 
 
-DEFAULT_SEED_USERS = [
-    ("admin", "AdminFloatPath2026!", "admin"),
-    ("reviewer", "ReviewerFloatPath2026!", "reviewer"),
-    ("analyst", "AnalystFloatPath2026!", "analyst"),
-    ("viewer", "ViewerFloatPath2026!", "viewer"),
+DEMO_ROLES = [
+    ("admin", "admin"),
+    ("reviewer", "reviewer"),
+    ("analyst", "analyst"),
+    ("viewer", "viewer"),
 ]
+
+
+def configure_demo_credentials(database, password: str, *, reset_existing: bool = False,
+                               allow_short_demo_password: bool = False) -> dict:
+    """Create or rotate synthetic-only demo accounts without hardcoded passwords."""
+    # Validate before opening a transaction. Every changed account gets its own salt.
+    encoded = hash_password(password, allow_short_synthetic_demo=allow_short_demo_password)
+    now = datetime.now(timezone.utc).isoformat()
+    actor_id = stable_id("actor:cli:manage_workspace")
+    correlation_id = str(uuid4())
+    counts = {"created": 0, "rotated": 0, "skipped": 0, "sessions_revoked": 0}
+    with write_transaction(database) as connection:
+        existing = {row["username"]: row for row in connection.execute(
+            text("SELECT id, username, role FROM workspace_users WHERE workspace_id='synthetic'")
+        ).mappings().all()}
+        for username, default_role in DEMO_ROLES:
+            current = existing.get(username)
+            if current is not None and not reset_existing:
+                counts["skipped"] += 1
+                continue
+            uid = current["id"] if current else str(uuid4())
+            role = current["role"] if current else default_role
+            if encoded is None:
+                encoded = hash_password(password, allow_short_synthetic_demo=allow_short_demo_password)
+            revoked = 0
+            if current is None:
+                connection.execute(text(
+                    "INSERT INTO workspace_users (id, workspace_id, username, password_hash, role, created_at) "
+                    "VALUES (:id, 'synthetic', :username, :hash, :role, :created)"
+                ), {"id": uid, "username": username, "hash": encoded, "role": role, "created": now})
+                action = "CREATE_DEMO_USER"
+                counts["created"] += 1
+            else:
+                connection.execute(text(
+                    "UPDATE workspace_users SET password_hash=:hash WHERE id=:id AND workspace_id='synthetic'"
+                ), {"id": uid, "hash": encoded})
+                revoked = connection.execute(text(
+                    "DELETE FROM workspace_sessions WHERE user_id=:id"
+                ), {"id": uid}).rowcount
+                counts["sessions_revoked"] += revoked
+                action = "ROTATE_DEMO_CREDENTIAL"
+                counts["rotated"] += 1
+            # Log only non-secret metadata, never passwords, PBKDF2 hashes, or session hashes.
+            connection.execute(text(
+                "INSERT INTO audit_events VALUES (:id, 'synthetic', :actor, :action, :entity, "
+                "NULL, :after, :correlation, :created)"
+            ), {"id": str(uuid4()), "actor": actor_id, "action": action, "entity": uid,
+                "after": digest({"role": role, "sessions_revoked": revoked}),
+                "correlation": correlation_id, "created": now})
+            encoded = None
+    return counts
 
 
 def seed_workspace(database):
@@ -37,16 +89,10 @@ def seed_workspace(database):
     run_migrations(database)
     counts = dict.fromkeys(("companies", "snapshots", "assessments", "scenarios", "reports", "users"), 0)
     created = datetime.now(timezone.utc).isoformat()
+    actor_id = stable_id("actor:cli:seed")
 
     def seed_id(value):
         return str(uuid5(NAMESPACE_URL, "floatpath:synthetic-seed:" + value))
-
-    with database.connect() as connection:
-        existing_users = set(connection.execute(text("SELECT username FROM workspace_users WHERE workspace_id='synthetic'")).scalars().all())
-    for username, password, role in DEFAULT_SEED_USERS:
-        if username not in existing_users:
-            create_user(database, username, password, role)
-            counts["users"] += 1
 
     with write_transaction(database) as connection:
         for company in catalog():
@@ -82,28 +128,54 @@ def seed_workspace(database):
                                 "input": result["input_hash"], "hash": result["result_hash"], "created": created})
             connection.execute(text("INSERT INTO reports VALUES (:id, 'synthetic', :scenarios, :payload, :created)"),
                                {"id": report["id"], "scenarios": dump([scenario_id]), "payload": dump(report), "created": created})
+            correlation_id = seed_id(company["id"] + ":correlation")
             connection.execute(text(
-                "INSERT INTO audit_events VALUES (:id, 'synthetic', 'cli:seed', 'SEED_COMPANY', :company, NULL, :hash, 'cli_seed', :created)"
-            ), {"id": seed_id(company["id"] + ":audit"), "company": company["id"], "hash": digest(payload), "created": created})
-            counts = {key: value + 1 for key, value in counts.items()}
+                "INSERT INTO audit_events VALUES (:id, 'synthetic', :actor, 'SEED_COMPANY', :company, NULL, :hash, :correlation, :created)"
+            ), {"id": seed_id(company["id"] + ":audit"), "actor": actor_id, "company": company["id"],
+                "hash": digest(payload), "correlation": correlation_id, "created": created})
+            for key in ("companies", "snapshots", "assessments", "scenarios", "reports"):
+                counts[key] += 1
     return counts
 
 
 def main():
     parser = argparse.ArgumentParser(description="Manage the single SYNTHETIC FloatPath workspace")
     commands = parser.add_subparsers(dest="command", required=True)
+
     user = commands.add_parser("create-user")
     user.add_argument("--username", required=True)
     user.add_argument("--role", required=True, choices=["viewer", "analyst", "reviewer", "admin"])
+
     seed = commands.add_parser("seed")
-    for command in (user, seed):
+
+    demo = commands.add_parser("demo-credentials")
+    demo.add_argument("--reset-existing", action="store_true", help="Rotate passwords for existing demo accounts")
+    demo.add_argument("--allow-short-demo-password", action="store_true",
+                      help="Allow the 11-character synthetic demo password")
+
+    for command in (user, seed, demo):
         command.add_argument("--database-url", default=os.getenv("DATABASE_URL", "sqlite:///./floatpath.db"))
+
     args = parser.parse_args()
     database = get_engine(args.database_url)
     try:
         run_migrations(database)
         if args.command == "seed":
             print(f"SYNTHETIC workspace seeded: {seed_workspace(database)}")
+        elif args.command == "demo-credentials":
+            password = os.getenv("FLOATPATH_DEMO_PASSWORD")
+            if not password:
+                prompt_msg = "Password (11–256 characters): " if args.allow_short_demo_password else "Password (12–256 characters): "
+                password = getpass.getpass(prompt_msg)
+                if password != getpass.getpass("Confirm password: "):
+                    parser.exit(1, "Passwords do not match\n")
+            result = configure_demo_credentials(
+                database,
+                password,
+                reset_existing=args.reset_existing,
+                allow_short_demo_password=args.allow_short_demo_password,
+            )
+            print(f"SYNTHETIC demo credentials configured: {result}")
         else:
             password = getpass.getpass("Password (12–256 characters): ")
             if password != getpass.getpass("Confirm password: "):

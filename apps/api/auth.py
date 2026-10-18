@@ -7,7 +7,7 @@ import re
 import secrets
 from threading import Lock
 from time import monotonic
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from fastapi import Request
 from sqlalchemy import text
@@ -26,9 +26,12 @@ def utcnow():
     return datetime.now(timezone.utc)
 
 
-def hash_password(password: str) -> str:
-    if not isinstance(password, str) or not 12 <= len(password) <= 256:
-        raise ValueError("Password must contain 12 to 256 characters")
+def hash_password(password: str, *, allow_short_synthetic_demo: bool = False) -> str:
+    # The local CLI may explicitly provision the requested 11-character demo
+    # credential. Normal API/user creation retains the 12-character minimum.
+    minimum = 11 if allow_short_synthetic_demo else 12
+    if not isinstance(password, str) or not minimum <= len(password) <= 256:
+        raise ValueError(f"Password must contain {minimum} to 256 characters")
     salt = secrets.token_hex(16)
     value = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), PASSWORD_ITERATIONS)
     return f"pbkdf2_sha256${PASSWORD_ITERATIONS}${salt}${value.hex()}"
@@ -59,7 +62,8 @@ def create_user(database, username: str, password: str, role: str) -> dict:
         connection.execute(text(
             "INSERT INTO workspace_users (id, workspace_id, username, password_hash, role, created_at) "
             "VALUES (:id, 'synthetic', :username, :password_hash, :role, :created_at)"
-        ), user | {"password_hash": hash_password(password), "created_at": utcnow().isoformat()})
+        ), user | {"password_hash": hash_password(password),
+                   "created_at": utcnow().isoformat()})
     return user
 
 
@@ -132,6 +136,14 @@ def login_user(request: Request, username: str, password: str):
     token = secrets.token_urlsafe(32)
     created = utcnow()
     with write_transaction(request.app.state.db) as connection:
+        # A credential rotation may have committed while PBKDF2 was running.
+        # Do not mint a fresh session from a now-revoked password verification.
+        current = connection.execute(text(
+            "SELECT id, username, role, password_hash FROM workspace_users WHERE id=:id AND workspace_id='synthetic'"
+        ), {"id": row["id"]}).mappings().first()
+        if current is None or not compare_digest(row["password_hash"], current["password_hash"]):
+            unauthorized("Credentials changed; sign in again")
+        row = current
         connection.execute(text("DELETE FROM workspace_sessions WHERE expires_at<=:now"), {"now": created.isoformat()})
         previous = request.cookies.get(COOKIE_NAME)
         if previous and re.fullmatch(TOKEN_PATTERN, previous):
@@ -164,7 +176,8 @@ def get_current_role(request: Request, required_role: str | None = None) -> str:
             if not (analyst or reviewer):
                 unauthorized("Invalid credentials")
             role = "reviewer" if reviewer else "analyst"
-            request.state.user = {"id": f"bearer:{role}", "username": None, "role": role, "auth_type": "bearer"}
+            actor_uuid = str(uuid5(NAMESPACE_URL, f"floatpath:actor:bearer:{role}"))
+            request.state.user = {"id": actor_uuid, "username": f"bearer_{role}", "role": role, "auth_type": "bearer"}
         else:
             user = session_user(request)
             request.state.user = {**user, "auth_type": "session"}

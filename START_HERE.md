@@ -1,17 +1,17 @@
 # START HERE — execution order
 
-## Prinsip
-Jangan mulai dari UI. Urutan: **regulatory source → data model → deterministic golden tests → engine → API → UX → AI → security → demo → outreach**. Yang paling mahal dibetulkan belakangan adalah aturan salah.
+## Principle
+Do not start with the UI. Order: **regulatory source → data model → deterministic golden tests → engine → API → UX → AI → security → demo → outreach**. Incorrect rules are the most expensive mistakes to fix later.
 
 ## Week-zero checklist
-- [ ] Baca `README.md` + BRD/PRD.
-- [ ] Tetapkan cakupan perusahaan (papan dan tipe pencatatan yang ditangani); MVP default `DEMO_STANDARD`.
-- [ ] Inventarisasi dokumen primer aturan & review ahli domain, catat nomor pasal dan versi.
-- [ ] Finalkan klasifikasi `ELIGIBLE`, `INELIGIBLE`, `UNKNOWN` dan bukti yang membenarkan masing-masing.
-- [ ] Tulis 20+ golden test cases, reviewer kedua menghitung independen.
-- [ ] Finalkan ERD dan OpenAPI contract.
-- [ ] Setujui synthetic-only public demo, tanpa data pribadi nyata.
-- [ ] Buat private repo, CI, secret scanning, issue tracker.
+- [ ] Read `README.md` + BRD/PRD.
+- [ ] Define company scope (supported boards and listing types); MVP default `DEMO_STANDARD`.
+- [ ] Inventory primary regulatory documents & domain expert reviews; record clause numbers and versions.
+- [ ] Finalize the `ELIGIBLE`, `INELIGIBLE`, `UNKNOWN` classifications and the evidence supporting each.
+- [ ] Write 20+ golden test cases, with a second reviewer calculating independently.
+- [ ] Finalize the ERD and OpenAPI contract.
+- [ ] Approve a synthetic-only public demo, with no real personal data.
+- [ ] Create a private repo, CI, secret scanning, and issue tracker.
 
 ## Build sequence
 **Gate G0: Rules & data** — no production claims until verified.  

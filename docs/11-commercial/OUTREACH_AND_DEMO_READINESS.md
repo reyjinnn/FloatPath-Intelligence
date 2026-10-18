@@ -19,16 +19,16 @@
 - [ ] Reply/follow-up tracker records informed interest rather than opens alone.
 
 ## Example email (professional)
-Subject: Modul simulasi free float & kesiapan aksi korporasi untuk layanan emiten
+Subject: Free float simulation & corporate action readiness module for issuer services
 
-Yth. Tim Datindo Entrycom,
+Dear Datindo Entrycom Team,
 
-Saya mengembangkan FloatPath Intelligence, prototipe untuk membantu tim emiten memverifikasi data kepemilikan, membandingkan skenario pemenuhan target free float, dan menyiapkan memo analisis yang dapat ditelusuri ke dokumen sumber. Produk ini dirancang sebagai modul pelengkap layanan administrasi efek yang sudah berjalan, bukan pengganti sistem internal.
+I am developing FloatPath Intelligence, a prototype to help issuer teams verify ownership data, compare scenarios for meeting free float targets, and prepare analysis memos traceable to source documents. The product is designed as a complementary module for existing securities administration services, not a replacement for internal systems.
 
-Berikut demo sintetis berdurasi singkat: [tautan video] dan [tautan prototipe]. Apakah proposal ini dapat diteruskan kepada tim yang menangani pengembangan layanan emiten untuk mendapat masukan dalam diskusi 20 menit?
+Here is a short synthetic demo: [video link] and [prototype link]. Could this proposal be forwarded to the team responsible for issuer service development for feedback in a 20-minute discussion?
 
-Hormat saya,
-[Nama pengirim]
+Best regards,
+[Sender name]
 
 ## Follow-up/measurement
 One reasonable follow-up after about a week; outreach to relevant issuer users in parallel. Record contact date, segment, qualified reply, actual demo, pilot scope discussion, objections, status. Do not infer product-market fit from silence.
